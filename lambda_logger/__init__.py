@@ -29,6 +29,10 @@ def lambda_logger(event={}, context={}):
         if val:
           log = log.bind(**{key: val})
 
+    request_id = context.get('aws_request_id')
+    if request_id:
+        log = log.bind(request_id=request_id)
+
     yield log
 
 
