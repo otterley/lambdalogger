@@ -1,6 +1,6 @@
 from contextlib import contextmanager
-
 from structlog._frames import _find_first_app_frame_and_name
+
 
 def add_app_context(logger, method_name, event_dict):
     f, _ = _find_first_app_frame_and_name(['logging', __name__])
@@ -8,6 +8,7 @@ def add_app_context(logger, method_name, event_dict):
     event_dict['line'] = f.f_lineno
     event_dict['function'] = f.f_code.co_name
     return event_dict
+
 
 @contextmanager
 def lambda_logger(event={}, context={}):
@@ -30,20 +31,22 @@ def lambda_logger(event={}, context={}):
         wrapper_class=structlog.stdlib.BoundLogger,
         cache_logger_on_first_use=True,
     )
-    event['trace_id'] = event.get('trace_id') or context.get('aws_request_id') or str(uuid.uuid4())
+    event['trace_id'] = event.get('trace_id') or context.get(
+        'aws_request_id') or str(uuid.uuid4())
     log = structlog.get_logger()
     log = log.bind(trace_id=event['trace_id'])
 
     for key in ('function_name', 'function_version'):
         val = context.get(key)
         if val:
-          log = log.bind(**{key: val})
+            log = log.bind(**{key: val})
 
     request_id = context.get('aws_request_id')
     if request_id:
         log = log.bind(request_id=request_id)
 
     yield log
+
 
 if __name__ == '__main__':
     event = {}
