@@ -1,5 +1,13 @@
 from contextlib import contextmanager
 
+from structlog._frames import _find_first_app_frame_and_name
+
+def add_app_context(logger, method_name, event_dict):
+    f, _ = _find_first_app_frame_and_name(['logging', __name__])
+    event_dict['file'] = f.f_code.co_filename
+    event_dict['line'] = f.f_lineno
+    event_dict['function'] = f.f_code.co_name
+    return event_dict
 
 @contextmanager
 def lambda_logger(event={}, context={}):
@@ -9,10 +17,12 @@ def lambda_logger(event={}, context={}):
     structlog.configure(
         processors=[
             structlog.stdlib.filter_by_level,
+            add_app_context,
             structlog.stdlib.add_log_level,
             structlog.processors.StackInfoRenderer(),
             structlog.processors.format_exc_info,
-            structlog.processors.TimeStamper(fmt='iso'),
+            structlog.processors.UnicodeDecoder(),
+            structlog.processors.TimeStamper(fmt='iso', utc=True),
             structlog.processors.JSONRenderer(sort_keys=True)
         ],
         context_class=dict,
@@ -34,7 +44,6 @@ def lambda_logger(event={}, context={}):
         log = log.bind(request_id=request_id)
 
     yield log
-
 
 if __name__ == '__main__':
     event = {}
