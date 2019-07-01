@@ -11,7 +11,7 @@ def add_app_context(logger, method_name, event_dict):
 
 
 @contextmanager
-def lambda_logger(event={}, context={}):
+def lambdalogger(event={}, context={}):
     import structlog
     import uuid
 

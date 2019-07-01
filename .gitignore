@@ -1,2 +1,9 @@
-dist/
-*.egg-info/
+*.pyc
+*.zip
+/.eggs
+/*.egg-info
+/build/
+/dist/
+/layerdist/
+Pipfile
+requirements.txt
