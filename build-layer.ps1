@@ -10,3 +10,5 @@ pipenv run pip install --find-links=dist -r requirements.txt -t $TARGET_DIR\pyth
 
 Remove-Item -ErrorAction Ignore $ZIPFILE
 Compress-Archive -Path $TARGET_DIR\* -DestinationPath $ZIPFILE
+
+Write-Output "Lambda Layer $ZIPFILE created successfully."
