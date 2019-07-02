@@ -30,7 +30,7 @@ def lambdalogger(event={}, context={}, level=logging.INFO):
             structlog.processors.format_exc_info,
             structlog.processors.UnicodeDecoder(),
             structlog.processors.TimeStamper(fmt='iso', utc=True),
-            structlog.processors.JSONRenderer(sort_keys=True)
+            structlog.processors.JSONRenderer(sort_keys=True, indent=None)
         ],
         context_class=dict,
         logger_factory=structlog.stdlib.LoggerFactory(),
