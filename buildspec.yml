@@ -12,6 +12,7 @@ phases:
       - pip install wheel pipenv
   build:
     commands:
+      - python setup.py bdist_wheel
       - pipenv --python 3.7
       - pipenv run python setup.py install
       - pipenv run pip freeze > requirements.txt
