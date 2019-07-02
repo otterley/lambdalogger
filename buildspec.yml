@@ -1,0 +1,26 @@
+version: 0.2
+
+env:
+  variables:
+    TARGET_DIR: layerdist
+
+phases:
+  install:
+    commands:
+      - pip install wheel pipenv
+  build:
+    commands:
+      - pipenv --python 3.7
+      - pipenv run python setup.py install
+      - pipenv run pip freeze > requirements.txt
+      - pipenv run pip install --find-links=dist -r requirements.txt -t $TARGET_DIR/python
+  post_build:
+    commands:
+      - cd $TARGET_DIR
+      - zip -r ../layer.zip python
+
+artifacts:
+  files:
+    - layer.zip
+
+      
