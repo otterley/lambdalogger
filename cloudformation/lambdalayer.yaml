@@ -21,10 +21,14 @@ Resources:
         S3Key: !Ref LayerZipFileKey
       Description: An opinionated logging framework for Lambda functions
       LayerName: LambdaLogger
+  ArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /lambda/layers/LambdaLogger/Arn/latest
+      Value: !Ref LoggerLayer
+      Type: String
 
 Outputs:
   LayerArn:
     Description: Lambda Layer version ARN
     Value: !Ref LoggerLayer
-    Export: 
-      Name: !Sub "${AWS::StackName}-LayerArn"
