@@ -25,5 +25,11 @@ phases:
 artifacts:
   files:
     - layer.zip
+  secondary-artifacts:
+    CloudFormationTemplate:
+      base-directory: cloudformation
+      files:
+        - lambdalayer.yaml
+
 
       
