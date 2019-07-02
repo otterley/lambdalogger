@@ -25,9 +25,6 @@ Only Python 3.6 and higher are supported.
 from lambdalogger import lambdalogger
 import logging
 
-# If not set, logs will only be emitted at WARN level or higher.
-logging.basicConfig(level=logging.INFO)
-
 def handler(event, context):
     with lambdalogger(event, context) as log:
         # Your logic goes here
