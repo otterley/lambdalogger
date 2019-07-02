@@ -43,14 +43,15 @@ def lambdalogger(event={}, context={}, level=logging.INFO):
     log = structlog.get_logger()
     log = log.bind(trace_id=event['trace_id'])
 
-    for key in ('function_name', 'function_version'):
+    lambda_context = {}
+
+    for key in ('function_name', 'function_version', 'aws_request_id'):
         val = getattr(context, key, None)
         if val:
-            log = log.bind(**{key: val})
+            lambda_context[key] = val
 
-    request_id = getattr(context, 'aws_request_id', None)
-    if request_id:
-        log = log.bind(request_id=request_id)
+    if len(lambda_context) > 0:
+        log = log.bind(lambda_context=lambda_context)
 
     yield log
 
