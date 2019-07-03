@@ -1,0 +1,248 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: CodePipeline pipeline for producing Lambda layer for LambdaLogger
+
+Parameters: 
+  StackName:
+    Description: Name of CloudFormation stack that maintains the Lambda layer
+    Type: String
+    Default: LambdaLoggerLayer
+  CodeCommitRepo:
+    Description: Name of CodeCommit repository in which source is stored
+    Type: String
+
+Resources:
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    Properties: 
+      AccessControl: Private
+      VersioningConfiguration: 
+        Status: Enabled
+
+  BuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties: 
+      Artifacts: 
+        Type: CODEPIPELINE
+      Description: Produce Lambda Layer for LambdaLogger Python module
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:2.0
+        ImagePullCredentialsType: CODEBUILD
+        Type: LINUX_CONTAINER
+      Name: LambdaLogger-LambdaLayer-Build
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Source: 
+        Type: CODEPIPELINE
+      TimeoutInMinutes: 5
+  
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: !Sub "codebuild.${AWS::URLSuffix}"
+          Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CodeBuild
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: 
+                  - !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/LambdaLogger-LambdaLayer-Build"
+                  - !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/LambdaLogger-LambdaLayer-Build:*"
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:GetBucketAcl
+                  - s3:GetBucketLocation
+                Resource: 
+                  - !GetAtt ArtifactBucket.Arn
+                  - !Join ["/", [!GetAtt ArtifactBucket.Arn, "*"]]
+
+  CloudFormationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: !Sub "cloudformation.${AWS::URLSuffix}"
+          Action: sts:AssumeRole 
+      ManagedPolicyArns:
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess"
+
+  PipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: !Sub "codepipeline.${AWS::URLSuffix}"
+          Action: sts:AssumeRole 
+      Policies:
+        - PolicyName: CodePipeline
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: iam:PassRole
+                Resource: "*"
+                Condition:
+                  StringEqualsIfExists:
+                    "iam:PassedToService":
+                      - !Sub "cloudformation.${AWS::URLSuffix}"
+              - Effect: Allow
+                Action:
+                  - codeCommit:GetCommit
+                  - codeCommit:GetBranch
+                  - codeCommit:UploadArchive
+                  - codecommit:GetUploadArchiveStatus
+                Resource: !Sub "arn:${AWS::Partition}:codecommit:${AWS::Region}:${AWS::AccountId}:${CodeCommitRepo}"
+              - Effect: Allow
+                Action:
+                  - "s3:*"
+                Resource: 
+                  - !GetAtt ArtifactBucket.Arn
+                  - !Join ["/", [!GetAtt ArtifactBucket.Arn, "*"]]
+              - Effect: Allow
+                Action:
+                  - cloudformation:CreateStack
+                  - cloudformation:DeleteStack
+                  - cloudformation:DescribeStacks
+                  - cloudformation:UpdateStack
+                  - cloudformation:CreateChangeSet
+                  - cloudformation:DeleteChangeSet
+                  - cloudformation:DescribeChangeSet
+                  - cloudformation:ExecuteChangeSet
+                  - cloudformation:SetStackPolicy
+                  - cloudformation:ValidateTemplate
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - codebuild:BatchGetBuilds
+                  - codebuild:StartBuild
+                Resource: !GetAtt BuildProject.Arn
+
+
+  BuildPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: LambdaLogger
+      RoleArn: !GetAtt PipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactBucket
+      Stages: 
+        - Name: Source
+          Actions:
+            - Name: Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeCommit
+                Version: "1"
+              Configuration:
+                BranchName: master
+                PollForSourceChanges: "false"
+                CodeCommitRepo: !Ref CodeCommitRepo
+              OutputArtifacts:
+                - Name: SourceArtifact
+              RunOrder: 1
+        - Name: Build
+          Actions:
+            - Name: Build
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              Configuration:
+                ProjectName: !Ref BuildProject
+              InputArtifacts:
+                - Name: SourceArtifact
+              OutputArtifacts:
+                - Name: BuildArtifact
+                - Name: CloudFormationTemplate
+              RunOrder: 1
+        - Name: Deploy
+          Actions:
+            - Name: Deploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: "1"
+              InputArtifacts:
+                - Name: CloudFormationTemplate
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                RoleArn: !GetAtt CloudFormationRole.Arn
+                StackName: !Ref StackName
+                TemplatePath: CloudFormationTemplate::lambdalayer.yaml
+                ParameterOverrides: |
+                  { 
+                    "LayerZipFileBucket": { 
+                      "Fn::GetArtifactAtt": ["CloudFormationTemplate", "BucketName"]
+                    },
+                    "LayerZipFileKey": {
+                      "Fn::GetArtifactAtt": ["CloudFormationTemplate", "ObjectKey"]
+                    }
+                  }
+              RunOrder: 1
+      RestartExecutionOnUpdate: true
+
+  SourceUpdateEventRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: !Sub "events.${AWS::URLSuffix}"
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AllowStartPipelineExecution
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+                - Effect: Allow
+                  Action: codepipeline:StartPipelineExecution
+                  Resource:
+                    - !Sub "arn:${AWS::Partition}:codepipeline:${AWS::Region}:${AWS::AccountId}:${BuildPipeline}"
+  
+  SourceUpdateEvent:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Invoke CodePipeline when lambdalogger source is updated
+      EventPattern:
+        source:
+          - aws.codecommit
+        resources:
+          - !Sub "arn:${AWS::Partition}:codecommit:${AWS::Region}:${AWS::AccountId}:${CodeCommitRepo}"
+        detail:
+          referenceType: ["branch"]
+          event: ["referenceCreated", "referenceUpdated"]
+          referenceName: ["master"]
+      State: ENABLED
+      Targets:
+        - Arn: !Sub "arn:${AWS::Partition}:codepipeline:${AWS::Region}:${AWS::AccountId}:${BuildPipeline}"
+          Id: LambdaLoggerBuildPipeline
+          RoleArn: !GetAtt SourceUpdateEventRole.Arn
