@@ -12,6 +12,8 @@ Parameters:
 Resources: 
   LoggerLayer:
     Type: AWS::Lambda::LayerVersion
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties: 
       CompatibleRuntimes: 
         - python3.6
