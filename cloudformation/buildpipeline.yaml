@@ -160,7 +160,7 @@ Resources:
               Configuration:
                 BranchName: master
                 PollForSourceChanges: "false"
-                CodeCommitRepo: !Ref CodeCommitRepo
+                RepositoryName: !Ref CodeCommitRepo
               OutputArtifacts:
                 - Name: SourceArtifact
               RunOrder: 1
