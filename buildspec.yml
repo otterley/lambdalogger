@@ -17,16 +17,13 @@ phases:
       - pipenv run python setup.py install
       - pipenv run pip freeze > requirements.txt
       - pipenv run pip install --find-links=dist -r requirements.txt -t $TARGET_DIR/python
-  post_build:
-    commands:
-      - cd $TARGET_DIR
-      - zip -r ../layer.zip python
 
 artifacts:
   secondary-artifacts:
-    LambdaLayerZipFile:
+    LambdaLayer:
+      base-directory: layerdist
       files:
-        - layer.zip
+        - python/*
     CloudFormationTemplate:
       base-directory: cloudformation
       files:
