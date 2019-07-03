@@ -23,7 +23,7 @@ artifacts:
     LambdaLayer:
       base-directory: layerdist
       files:
-        - python/*
+        - 'python/**/*'
     CloudFormationTemplate:
       base-directory: cloudformation
       files:
