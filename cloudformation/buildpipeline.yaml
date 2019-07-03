@@ -177,7 +177,7 @@ Resources:
               InputArtifacts:
                 - Name: SourceArtifact
               OutputArtifacts:
-                - Name: BuildArtifact
+                - Name: LambdaLayerZipFile
                 - Name: CloudFormationTemplate
               RunOrder: 1
         - Name: Deploy
@@ -189,6 +189,7 @@ Resources:
                 Provider: CloudFormation
                 Version: "1"
               InputArtifacts:
+                - Name: LambdaLayerZipFile
                 - Name: CloudFormationTemplate
               Configuration:
                 ActionMode: CREATE_UPDATE
@@ -198,10 +199,10 @@ Resources:
                 ParameterOverrides: |
                   { 
                     "LayerZipFileBucket": { 
-                      "Fn::GetArtifactAtt": ["BuildArtifact", "BucketName"]
+                      "Fn::GetArtifactAtt": ["LambdaLayerZipFile", "BucketName"]
                     },
                     "LayerZipFileKey": {
-                      "Fn::GetArtifactAtt": ["BuildArtifact", "ObjectKey"]
+                      "Fn::GetArtifactAtt": ["LambdaLayerZipFile", "ObjectKey"]
                     }
                   }
               RunOrder: 1

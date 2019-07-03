@@ -24,7 +24,7 @@ phases:
 
 artifacts:
   secondary-artifacts:
-    BuildArtifact:
+    LambdaLayerZipFile:
       files:
         - layer.zip
     CloudFormationTemplate:
