@@ -198,10 +198,10 @@ Resources:
                 ParameterOverrides: |
                   { 
                     "LayerZipFileBucket": { 
-                      "Fn::GetArtifactAtt": ["CloudFormationTemplate", "BucketName"]
+                      "Fn::GetArtifactAtt": ["BuildArtifact", "BucketName"]
                     },
                     "LayerZipFileKey": {
-                      "Fn::GetArtifactAtt": ["CloudFormationTemplate", "ObjectKey"]
+                      "Fn::GetArtifactAtt": ["BuildArtifact", "ObjectKey"]
                     }
                   }
               RunOrder: 1
