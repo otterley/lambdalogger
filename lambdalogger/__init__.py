@@ -12,7 +12,7 @@ def add_app_context(logger, method_name, event_dict):
 
 
 @contextmanager
-def lambdalogger(event={}, context={}, level=logging.INFO):
+def lambdalogger(event={}, context=None, level=logging.INFO):
     import structlog
     import uuid
 
