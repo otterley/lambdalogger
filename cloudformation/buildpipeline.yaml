@@ -9,6 +9,10 @@ Parameters:
   CodeCommitRepo:
     Description: Name of CodeCommit repository in which source is stored
     Type: String
+  S3BucketPrefix:
+    Description: S3 bucket name prefix for compiled Python modules (egg, whl)
+    Type: String
+    Default: cop-python
 
 Resources:
   ArtifactBucket:
@@ -120,6 +124,8 @@ Resources:
                 Resource: 
                   - !GetAtt ArtifactBucket.Arn
                   - !Join ["/", [!GetAtt ArtifactBucket.Arn, "*"]]
+                  - !Sub "arn:${AWS::Partition}:s3:::${S3BucketPrefix}-${AWS::Region}"
+                  - !Sub "arn:${AWS::Partition}:s3:::${S3BucketPrefix}-${AWS::Region}/*"
               - Effect: Allow
                 Action:
                   - cloudformation:CreateStack
@@ -216,7 +222,7 @@ Resources:
               InputArtifacts:
                 - Name: PythonModules
               Configuration:
-                BucketName: !Sub "cop-python-${AWS::Region}"
+                BucketName: !Sub "${S3BucketPrefix}-${AWS::Region}"
                 Extract: "true"
               RunOrder: 1
       RestartExecutionOnUpdate: true
