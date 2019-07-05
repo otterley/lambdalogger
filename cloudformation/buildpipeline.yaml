@@ -178,11 +178,12 @@ Resources:
                 - Name: SourceArtifact
               OutputArtifacts:
                 - Name: LambdaLayer
+                - Name: PythonModules
                 - Name: CloudFormationTemplate
               RunOrder: 1
         - Name: Deploy
           Actions:
-            - Name: Deploy
+            - Name: DeployLambdaLayer
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -205,6 +206,18 @@ Resources:
                       "Fn::GetArtifactAtt": ["LambdaLayer", "ObjectKey"]
                     }
                   }
+              RunOrder: 1
+            - Name: DeployPythonModules
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: S3
+                Version: "1"
+              InputArtifacts:
+                - Name: PythonModules
+              Configuration:
+                BucketName: !Sub "cop-python-${AWS::Region}"
+                Extract: "true"
               RunOrder: 1
       RestartExecutionOnUpdate: true
 

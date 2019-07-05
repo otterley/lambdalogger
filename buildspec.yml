@@ -24,6 +24,11 @@ artifacts:
       base-directory: layerdist
       files:
         - 'python/**/*'
+    PythonModules:
+      base-directory: dist
+      files:
+        - '*.whl'
+        - '*.egg'
     CloudFormationTemplate:
       base-directory: cloudformation
       files:
