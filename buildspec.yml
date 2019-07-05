@@ -28,7 +28,6 @@ artifacts:
       base-directory: dist
       files:
         - '*.whl'
-        - '*.egg'
     CloudFormationTemplate:
       base-directory: cloudformation
       files:
