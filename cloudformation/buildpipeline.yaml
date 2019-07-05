@@ -124,7 +124,9 @@ Resources:
                 Resource: 
                   - !GetAtt ArtifactBucket.Arn
                   - !Join ["/", [!GetAtt ArtifactBucket.Arn, "*"]]
-                  - !Sub "arn:${AWS::Partition}:s3:::${S3BucketPrefix}-${AWS::Region}"
+              - Effect: Allow
+                Action: s3:PutObject
+                Resource:
                   - !Sub "arn:${AWS::Partition}:s3:::${S3BucketPrefix}-${AWS::Region}/*"
               - Effect: Allow
                 Action:
