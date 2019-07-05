@@ -26,7 +26,7 @@ Resources:
   ArnParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: /lambda/layers/LambdaLogger/arn/latest
+      Name: /lambda/layers/lambdalogger/arn/latest
       Value: !Ref LoggerLayer
       Type: String
 
